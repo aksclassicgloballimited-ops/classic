@@ -208,6 +208,25 @@ class CPYCoopAPITester:
             return True
         return False
 
+    def test_admin_login(self) -> bool:
+        """
+        Explicit admin login step (separate 'tab') to verify admin credentials and retrieve fresh admin token.
+        """
+        if not self.test_admin_email:
+            self.log_test("Admin Login", False, "No admin email available - admin creation likely failed")
+            return False
+
+        login_data = {
+            "email": self.test_admin_email,
+            "password": self.test_password
+        }
+
+        success, resp = self.run_test("Admin Login", "POST", "auth/login", 200, data=login_data)
+        if success and isinstance(resp, dict) and 'token' in resp:
+            self.admin_token = resp['token']
+            return True
+        return False
+
     def test_member_login(self) -> bool:
         if not self.test_member_email:
             self.log_test("Member Login", False, "No member email available - registration failed?")
@@ -404,6 +423,8 @@ class CPYCoopAPITester:
         print("\n📝 Phase 1: Authentication")
         self.test_member_registration()
         self.test_admin_creation()
+        # New admin login 'tab'
+        self.test_admin_login()
         self.test_member_login()
 
         print("\n👤 Phase 2: Member Features")
@@ -433,7 +454,6 @@ def main(argv: Optional[List[str]] = None) -> int:
     tester = CPYCoopAPITester(base_url=args.base_url)
     success = tester.run_all_tests()
     return 0 if success else 1
-
 
 if __name__ == "__main__":
     sys.exit(main())
